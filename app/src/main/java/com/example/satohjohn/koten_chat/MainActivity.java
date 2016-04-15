@@ -28,6 +28,7 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.example.satohjohn.koten_chat.model.Chat;
+import com.firebase.client.ChildEventListener;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
@@ -79,20 +80,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         myFirebaseRef = new Firebase("https://sweltering-fire-5633.firebaseio.com/");
 
-        myFirebaseRef.child("chats").addValueEventListener(new ValueEventListener() {
+        myFirebaseRef.child("chats").addChildEventListener(new ChildEventListener() {
             @Override
-            public void onDataChange(DataSnapshot snapshot) {
-                for (DataSnapshot ds:  snapshot.getChildren()) {
-                    showText(ds.getValue().toString());
-//                    showText(value.message);
-                }
-                //System.out.println(snapshot.getValue());  //prints "Do you have data? You'll love Firebase."
-//                if (snapshot.getValue() != null) {
-////                    HashMap<String, Object> data = snapshot.getValue();
-//                    LinkedHashMap<Long, ArrayList<Chat>> value = (LinkedHashMap<Long, ArrayList<Chat>>) snapshot.getValue(new LinkedHashMap<Long, ArrayList<Chat>>().getClass());
-//                    showText(value.toString());
-//                }
+            public void onChildAdded(DataSnapshot snapshot, String previousChildName) {
+                showText(snapshot.getValue(Chat.class).message);
             }
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+
+            }
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+            }
+
             @Override public void onCancelled(FirebaseError error) {
                 System.out.print("error = [" + error + "]");
             }
@@ -129,10 +137,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Log.d("aaa", "change start");
         String changeWord =  a.Change(0, comment.getText().toString());
 
-        showText(changeWord);
+//        showText(changeWord);
         comment.setText("");
 
-        myFirebaseRef.child("chats").push().setValue(changeWord);
+        myFirebaseRef.child("chats").push().setValue(new Chat(changeWord));
     }
 
     private void showText(String text) {

@@ -10,10 +10,15 @@ public class Chat {
 
     public String message;
 
-    public String publishAt;
+    public Date publishAt;
 
-    public Chat(String message, String publishAt) {
+    // Required default constructor for Firebase object mapping
+    @SuppressWarnings("unused")
+    private Chat() {
+    }
+
+    public Chat(String message) {
         this.message = message;
-        this.publishAt = publishAt;
+        this.publishAt = new Date();
     }
 }
