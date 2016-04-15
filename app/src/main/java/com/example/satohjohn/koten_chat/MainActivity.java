@@ -1,60 +1,43 @@
 package com.example.satohjohn.koten_chat;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ScrollView;
-import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
-import android.widget.Button;
-import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.satohjohn.koten_chat.model.Chat;
+import com.example.satohjohn.koten_chat.model.FireBaseList;
 import com.firebase.client.ChildEventListener;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
 import com.firebase.client.ValueEventListener;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-
-import static java.util.Locale.getDefault;
+import java.util.Random;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, View.OnKeyListener {
 
     Firebase myFirebaseRef;
-    ArrayList<Chat> chats;
+
+    FireBaseList<Chat> chats;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        chats = new ArrayList<Chat>();
+        chats = new FireBaseList<>();
 
         Button send_button = (Button)findViewById(R.id.send_button);
         send_button.setOnClickListener(this);
@@ -62,43 +45,47 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         EditText editText = (EditText)findViewById(R.id.editText);
         editText.setOnKeyListener(this);
 
-        Bitmap bm = null;
-        try {
-            InputStream is = getResources().getAssets().open("base_1024.png");
-            bm = BitmapFactory.decodeStream(is);
-            //bm = bm.createScaledBitmap(bm, 256, 256, false);
-        }
-        catch (IOException e) {
-            Log.d("Assets","Error");
-        }
         ScrollView scrollView = (ScrollView)findViewById(R.id.scrollView);
-
-        BitmapDrawable ob = new BitmapDrawable(getResources(), bm);
-        scrollView.setBackground(ob);
+        scrollView.setBackgroundResource(R.drawable.base_1024);
 
         Firebase.setAndroidContext(this);
 
         myFirebaseRef = new Firebase("https://sweltering-fire-5633.firebaseio.com/");
 
+        // firebaseにあるchatsを監視する
         myFirebaseRef.child("chats").addChildEventListener(new ChildEventListener() {
+
+            // 追加された時
+            // 初回起動時にも呼ばれる
             @Override
-            public void onChildAdded(DataSnapshot snapshot, String previousChildName) {
-                showText(snapshot.getValue(Chat.class).message);
+            public void onChildAdded(DataSnapshot dataSnapshot, String previousChildName) {
+                Chat chat = dataSnapshot.getValue(Chat.class);
+                String key = dataSnapshot.getKey();
+                chats.add(chat, key, previousChildName);
+                addRow(chat);
             }
 
+            // 変更された時
             @Override
             public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-
+                Chat chat = dataSnapshot.getValue(Chat.class);
+                String key = dataSnapshot.getKey();
+                chats.change(chat, key);
             }
 
+            // 削除された時
             @Override
             public void onChildRemoved(DataSnapshot dataSnapshot) {
-
+                String key = dataSnapshot.getKey();
+                chats.remove(key);
             }
 
+            // 順序が入れ替わった時
             @Override
-            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-
+            public void onChildMoved(DataSnapshot dataSnapshot, String previousChildName) {
+                Chat chat = dataSnapshot.getValue(Chat.class);
+                String key = dataSnapshot.getKey();
+                chats.moved(chat, key, previousChildName);
             }
 
             @Override public void onCancelled(FirebaseError error) {
@@ -106,6 +93,31 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
 
+
+        // firebaseにつないでいるかどうかを調べる
+        myFirebaseRef.getRoot().child(".info/connected").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                boolean connected = (Boolean) dataSnapshot.getValue();
+                if (connected) {
+                    Toast.makeText(MainActivity.this, "Connected to Firebase", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(MainActivity.this, "Disconnected from Firebase", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onCancelled(FirebaseError firebaseError) {
+                // No-op
+            }
+        });
+
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        setupUsername();
     }
 
     public boolean onKey(View v, int keyCode, KeyEvent event) {
@@ -132,62 +144,59 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             return;
         }
 
-        Log.d("aaa", "start");
-        ChangeWord a = new ChangeWord();
-        Log.d("aaa", "change start");
-        String changeWord =  a.Change(0, comment.getText().toString());
+        // 保存するときにはそのままの文字列を入れる（後で見返せるように
+        myFirebaseRef.child("chats").push().setValue(new Chat(getUserName(), comment.getText().toString()));
 
-//        showText(changeWord);
+        // ここで追加するとローカルだけ一個多く追加されてしまう。
         comment.setText("");
-
-        myFirebaseRef.child("chats").push().setValue(new Chat(changeWord));
     }
 
-    private void showText(String text) {
-
-        Bitmap bm = null;
+    private void addRow(Chat chat) {
 
         // TableLayoutのグループを取得
         ViewGroup vg = (ViewGroup)findViewById(R.id.chat_table);
 
-        if( vg.getChildCount() %2 == 0 ) {
-            try {
-                InputStream is = getResources().getAssets().open("icon_01.png");
-                bm = BitmapFactory.decodeStream(is);
-                bm = bm.createScaledBitmap(bm, 256, 256, false);
-            }
-            catch (IOException e) {
-                Log.d("Assets","Error");
-            }
-
-            // 行を追加
-            getLayoutInflater().inflate(R.layout.talbe_row, vg);
-
-            // 文字設定
-            TableRow tr = (TableRow)vg.getChildAt(vg.getChildCount()-1);
-            ((ImageView)(tr.getChildAt(0))).setImageBitmap(bm);
-            ((TextView)(tr.getChildAt(1))).setText(text);
-        }
-        else {
-            try {
-                InputStream is = getResources().getAssets().open("icon_02.png");
-                bm = BitmapFactory.decodeStream(is);
-                bm = bm.createScaledBitmap(bm, 256, 256, false);
-            }
-            catch (IOException e) {
-                Log.d("Assets","Error");
-            }
-
+        if (getUserName().equals(chat.userId)) {
             // 行を追加
             getLayoutInflater().inflate(R.layout.talbe_row_right, vg);
-
-            // 文字設定
-            TableRow tr = (TableRow)vg.getChildAt(vg.getChildCount()-1);
-            ((ImageView)(tr.getChildAt(1))).setImageBitmap(bm);
-            ((TextView)(tr.getChildAt(0))).setText(text);
+        } else {
+            // 行を追加
+            getLayoutInflater().inflate(R.layout.talbe_row, vg);
         }
+
+        // 文字設定
+        TableRow tr = (TableRow)vg.getChildAt(vg.getChildCount()-1);
+
+        if (getUserName().equals(chat.userId)) {
+            ((ImageView)(tr.findViewById(R.id.row_icon_image))).setImageResource(R.drawable.icon_01);
+        } else {
+            ((ImageView)(tr.findViewById(R.id.row_icon_image))).setImageResource(R.drawable.icon_02);
+        }
+
+        Log.d("aaa", "start");
+        ChangeWord a = new ChangeWord();
+        Log.d("aaa", "change start");
+        String changeWord = a.Change(0, chat.message);
+
+        // 表示の際に変換をかける
+        ((TextView)(tr.findViewById(R.id.row_text))).setText(changeWord);
 
         ScrollView scrollView = (ScrollView)findViewById(R.id.scrollView);
         scrollView.fullScroll(ScrollView.FOCUS_DOWN);
+    }
+
+    private void setupUsername() {
+        String userName = getUserName();
+        if (userName.isEmpty()) {
+            Random r = new Random();
+            // Assign a random user name if we don't have one saved.
+            userName = "JavaUser" + r.nextInt(100000);
+            this.getSharedPreferences("ChatPrefs", Context.MODE_PRIVATE).edit().putString("username", userName).commit();
+        }
+    }
+
+    private String getUserName() {
+        SharedPreferences prefs = this.getSharedPreferences("ChatPrefs", Context.MODE_PRIVATE);
+        return prefs.getString("username", null) == null ? "" : prefs.getString("username", null);
     }
 }

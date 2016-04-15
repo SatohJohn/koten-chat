@@ -2,11 +2,18 @@
 <TableRow xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="match_parent"
-    android:id="@+id/table_row_right">
+    android:id="@+id/table_row">
 
     <TextView
         android:gravity="right"
-        android:layout_weight="1"></TextView>
+        android:layout_weight="1"
+        android:id="@+id/row_text"
+        android:text="fuga"/>
     <ImageView
-        android:gravity="right"></ImageView>
+        android:gravity="left"
+        android:layout_width="@dimen/row_icon_width"
+        android:layout_height="@dimen/row_icon_height"
+        android:id="@+id/row_icon_image"
+        android:src="@drawable/icon_01" />
+
 </TableRow>
