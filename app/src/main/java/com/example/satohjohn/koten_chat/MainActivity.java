@@ -56,10 +56,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     {
         EditText comment = (EditText)findViewById(R.id.editText);
 
+
         if( comment.getText().equals("") )
         {
             return;
         }
+
+        Log.d("aaa", "start");
+        ChangeWord a = new ChangeWord();
+        Log.d("aaa", "change start");
+        String changeWord =  a.Change(0, comment.getText().toString());
 
         // TableLayoutのグループを取得
         ViewGroup vg = (ViewGroup)findViewById(R.id.chat_table);
@@ -78,7 +84,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             Log.d("Assets","Error");
         }
         ((ImageView)(tr.getChildAt(0))).setImageBitmap(bm);
-        ((TextView)(tr.getChildAt(1))).setText(comment.getText());
+        ((TextView)(tr.getChildAt(1))).setText(changeWord);
+        //((TextView)(tr.getChildAt(1))).setText(comment.getText());
         comment.setText("");
     }
 
