@@ -24,19 +24,36 @@ import android.widget.ScrollView;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+import android.widget.Button;
+import android.widget.TextView;
+
+import com.example.satohjohn.koten_chat.model.Chat;
+import com.firebase.client.DataSnapshot;
+import com.firebase.client.Firebase;
+import com.firebase.client.FirebaseError;
+import com.firebase.client.ValueEventListener;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 
 import static java.util.Locale.getDefault;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, View.OnKeyListener {
 
+    Firebase myFirebaseRef;
+    ArrayList<Chat> chats;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        chats = new ArrayList<Chat>();
 
         Button send_button = (Button)findViewById(R.id.send_button);
         send_button.setOnClickListener(this);
@@ -79,12 +96,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     {
         EditText comment = (EditText)findViewById(R.id.editText);
 
-        if( comment.getText().toString().equals("") )
+       if( comment.getText().toString().equals("") )
         {
             return;
         }
 
         Bitmap bm = null;
+
+        Log.d("aaa", "start");
+        ChangeWord a = new ChangeWord();
+        Log.d("aaa", "change start");
+        String changeWord =  a.Change(0, comment.getText().toString());
 
         // TableLayoutのグループを取得
         ViewGroup vg = (ViewGroup)findViewById(R.id.chat_table);
@@ -105,7 +127,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             // 文字設定
             TableRow tr = (TableRow)vg.getChildAt(vg.getChildCount()-1);
             ((ImageView)(tr.getChildAt(0))).setImageBitmap(bm);
-            ((TextView)(tr.getChildAt(1))).setText(comment.getText().toString());
+            ((TextView)(tr.getChildAt(1))).setText(changeWord);
         }
         else {
             try {
@@ -123,12 +145,52 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             // 文字設定
             TableRow tr = (TableRow)vg.getChildAt(vg.getChildCount()-1);
             ((ImageView)(tr.getChildAt(1))).setImageBitmap(bm);
-            ((TextView)(tr.getChildAt(0))).setText(comment.getText().toString());
+            ((TextView)(tr.getChildAt(0))).setText(changeWord);
         }
-
         comment.setText("");
 
         ScrollView scrollView = (ScrollView)findViewById(R.id.scrollView);
         scrollView.fullScroll(ScrollView.FOCUS_DOWN);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Firebase.setAndroidContext(this);
+
+        myFirebaseRef = new Firebase("https://sweltering-fire-5633.firebaseio.com/");
+
+        myFirebaseRef.child("chats").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                for (DataSnapshot ds:  snapshot.getChildren()) {
+                    showText(ds.getValue().toString());
+//                    showText(value.message);
+                }
+                //System.out.println(snapshot.getValue());  //prints "Do you have data? You'll love Firebase."
+//                if (snapshot.getValue() != null) {
+////                    HashMap<String, Object> data = snapshot.getValue();
+//                    LinkedHashMap<Long, ArrayList<Chat>> value = (LinkedHashMap<Long, ArrayList<Chat>>) snapshot.getValue(new LinkedHashMap<Long, ArrayList<Chat>>().getClass());
+//                    showText(value.toString());
+//                }
+            }
+            @Override public void onCancelled(FirebaseError error) {
+                System.out.print("error = [" + error + "]");
+            }
+        });
+
+        Button button = (Button) findViewById(R.id.send_button);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                myFirebaseRef.child("chats").setValue(new Chat("hogehoge", new Date().toString()));
+            }
+        });
+    }
+    private void showText(String text) {
+        TextView te = (TextView) findViewById(R.id.text);
+        if (te != null) {
+            te.setText(text);
+        }
     }
 }
