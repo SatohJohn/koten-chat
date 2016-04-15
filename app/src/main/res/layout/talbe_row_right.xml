@@ -4,6 +4,9 @@
     android:layout_height="match_parent"
     android:id="@+id/table_row">
 
-    <ImageView />
-    <TextView	 />
+    <TextView
+        android:gravity="right"
+        android:layout_weight="1"></TextView>
+    <ImageView
+        android:gravity="right"></ImageView>
 </TableRow>

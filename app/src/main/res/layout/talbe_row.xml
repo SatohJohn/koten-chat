@@ -4,7 +4,10 @@
     android:layout_height="match_parent"
     android:id="@+id/table_row">
 
-    <ImageView />
-    <TextView	 />
+    <ImageView
+        android:gravity="left"></ImageView>
+    <TextView
+        android:gravity="center_vertical"
+        android:layout_weight="1"></TextView>
 
 </TableRow>
