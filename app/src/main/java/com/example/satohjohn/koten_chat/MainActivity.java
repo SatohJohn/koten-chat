@@ -124,12 +124,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             return;
         }
 
-        Bitmap bm = null;
-
         Log.d("aaa", "start");
         ChangeWord a = new ChangeWord();
         Log.d("aaa", "change start");
         String changeWord =  a.Change(0, comment.getText().toString());
+
+        showText(changeWord);
+        comment.setText("");
+
+        myFirebaseRef.child("chats").push().setValue(changeWord);
+    }
+
+    private void showText(String text) {
+
+        Bitmap bm = null;
 
         // TableLayoutのグループを取得
         ViewGroup vg = (ViewGroup)findViewById(R.id.chat_table);
@@ -150,7 +158,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             // 文字設定
             TableRow tr = (TableRow)vg.getChildAt(vg.getChildCount()-1);
             ((ImageView)(tr.getChildAt(0))).setImageBitmap(bm);
-            ((TextView)(tr.getChildAt(1))).setText(changeWord);
+            ((TextView)(tr.getChildAt(1))).setText(text);
         }
         else {
             try {
@@ -168,34 +176,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             // 文字設定
             TableRow tr = (TableRow)vg.getChildAt(vg.getChildCount()-1);
             ((ImageView)(tr.getChildAt(1))).setImageBitmap(bm);
-            ((TextView)(tr.getChildAt(0))).setText(changeWord);
+            ((TextView)(tr.getChildAt(0))).setText(text);
         }
-        comment.setText("");
 
         ScrollView scrollView = (ScrollView)findViewById(R.id.scrollView);
         scrollView.fullScroll(ScrollView.FOCUS_DOWN);
-        myFirebaseRef.child("chats").push().setValue(changeWord);
-    }
-
-    private void showText(String text) {
-
-        // TableLayoutのグループを取得
-        ViewGroup vg = (ViewGroup)findViewById(R.id.chat_table);
-
-        // 行を追加
-        getLayoutInflater().inflate(R.layout.talbe_row, vg);
-        // 文字設定
-        TableRow tr = (TableRow)vg.getChildAt(vg.getChildCount()-1);
-
-        Bitmap bm = null;
-        try {
-            InputStream is = getResources().getAssets().open("icon_01.jpg");
-            bm = BitmapFactory.decodeStream(is);
-        }
-        catch (IOException e) {
-            Log.d("Assets","Error");
-        }
-        ((ImageView)(tr.getChildAt(0))).setImageBitmap(bm);
-        ((TextView)(tr.getChildAt(1))).setText(text);
     }
 }
