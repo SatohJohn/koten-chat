@@ -17,19 +17,33 @@ public class ChangeWord {
         kogoList.clear();
 
         kogoList.add(new ChangeWordInfo("おもむきがある", "おかし"));
+        kogoList.add(new ChangeWordInfo("おもしろい", "おかし"));
+        kogoList.add(new ChangeWordInfo("まじで", "いと"));
+        kogoList.add(new ChangeWordInfo("とても", "いと"));
     }
 
     String Change(int no, String word)
     {
         Log.d("aaa", "Start : " + word);
-        for (ChangeWordInfo item : kogoList)
-        {
-            Log.d("aaa", item.now + " : " + word + " : " + (item.now == word));
-            if (item.now == word)
-            {
-                return item.after;
+        String nextWord = word;
+        String changeWord = "";
+        while(nextWord.isEmpty() == false) {
+            Log.d("aaa", nextWord + " : " + changeWord);
+            boolean isFind = false;
+            for (ChangeWordInfo item : kogoList) {
+                // 文字列が見つかった
+                if (nextWord.indexOf(item.now) == 0) {
+                    changeWord += item.after;
+                    nextWord = nextWord.substring(item.now.length());
+                    isFind = true;
+                    break;
+                }
+            }
+            if (isFind == false) {
+                changeWord += nextWord.substring(0,1);
+                nextWord = nextWord.substring(1);
             }
         }
-        return word;
+        return changeWord;
     }
 }
